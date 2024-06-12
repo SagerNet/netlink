@@ -11,7 +11,8 @@ type Rule struct {
 	Family            int
 	Table             int
 	Type              uint8
-	Mark              int
+	Mark              uint32
+	MarkSet           bool
 	Mask              int
 	Tos               uint
 	TunID             uint
@@ -52,7 +53,6 @@ func NewRule() *Rule {
 		SuppressIfgroup:   -1,
 		SuppressPrefixlen: -1,
 		Priority:          -1,
-		Mark:              -1,
 		Mask:              -1,
 		Goto:              -1,
 		Flow:              -1,

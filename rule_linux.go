@@ -107,9 +107,9 @@ func ruleHandle(rule *Rule, req *nl.NetlinkRequest) error {
 		native.PutUint32(b, uint32(rule.Priority))
 		req.AddData(nl.NewRtAttr(nl.FRA_PRIORITY, b))
 	}
-	if rule.Mark >= 0 {
+	if rule.MarkSet {
 		b := make([]byte, 4)
-		native.PutUint32(b, uint32(rule.Mark))
+		native.PutUint32(b, rule.Mark)
 		req.AddData(nl.NewRtAttr(nl.FRA_FWMARK, b))
 	}
 	if rule.Mask >= 0 {
@@ -240,7 +240,7 @@ func (h *Handle) RuleListFiltered(family int, filter *Rule, filterMask uint64) (
 				}
 				rule.Dst = netip.PrefixFrom(addr, int(msg.Dst_len))
 			case nl.FRA_FWMARK:
-				rule.Mark = int(native.Uint32(attrs[j].Value[0:4]))
+				rule.Mark = native.Uint32(attrs[j].Value[0:4])
 			case nl.FRA_FWMASK:
 				rule.Mask = int(native.Uint32(attrs[j].Value[0:4]))
 			case nl.FRA_TUN_ID:

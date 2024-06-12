@@ -297,7 +297,7 @@ func runRuleListFiltered(t *testing.T, family int, srcNet, dstNet netip.Prefix) 
 		},
 		{
 			name:       "returns rules filtered by Mark",
-			ruleFilter: &Rule{Mark: 0xbb},
+			ruleFilter: &Rule{Mark: 0xbb, MarkSet: true},
 			filterMask: RT_FILTER_MARK,
 			preRun: func() *Rule {
 				r := NewRule()
