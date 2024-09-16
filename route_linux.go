@@ -771,18 +771,20 @@ func (h *Handle) routeHandle(route *Route, req *nl.NetlinkRequest, msg *nl.RtMsg
 
 	}
 
-	if route.Src != nil {
-		srcFamily := nl.GetIPFamily(route.Src)
+	if route.Src != nil && route.Src.IP != nil {
+		srcFamily := nl.GetIPFamily(route.Src.IP)
 		if family != -1 && family != srcFamily {
 			return nil, fmt.Errorf("source and destination ip are not the same IP family")
 		}
 		family = srcFamily
 		var srcData []byte
 		if srcFamily == FAMILY_V4 {
-			srcData = route.Src.To4()
+			srcData = route.Src.IP.To4()
 		} else {
-			srcData = route.Src.To16()
+			srcData = route.Src.IP.To16()
 		}
+		srcLen, _ := route.Dst.Mask.Size()
+		msg.Src_len = uint8(srcLen)
 		// The commonly used src ip for routes is actually PREFSRC
 		rtAttrs = append(rtAttrs, nl.NewRtAttr(unix.RTA_PREFSRC, srcData))
 	}
@@ -1062,7 +1064,7 @@ func (h *Handle) RouteListFiltered(family int, filter *Route, filterMask uint64)
 				continue
 			case filterMask&RT_FILTER_GW != 0 && !route.Gw.Equal(filter.Gw):
 				continue
-			case filterMask&RT_FILTER_SRC != 0 && !route.Src.Equal(filter.Src):
+			case filterMask&RT_FILTER_SRC != 0 && !ipNetEqual(route.Src, filter.Src):
 				continue
 			case filterMask&RT_FILTER_DST != 0:
 				if filter.MPLSDst == nil || route.MPLSDst == nil || (*filter.MPLSDst) != (*route.MPLSDst) {
@@ -1102,7 +1104,10 @@ func deserializeRoute(m []byte) (Route, error) {
 		case unix.RTA_GATEWAY:
 			route.Gw = net.IP(attr.Value)
 		case unix.RTA_PREFSRC:
-			route.Src = net.IP(attr.Value)
+			route.Src = &net.IPNet{
+				IP:   attr.Value,
+				Mask: net.CIDRMask(int(msg.Src_len), 8*len(attr.Value)),
+			}
 		case unix.RTA_DST:
 			if msg.Family == nl.FAMILY_MPLS {
 				stack := nl.DecodeMPLSStack(attr.Value)

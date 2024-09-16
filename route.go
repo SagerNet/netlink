@@ -54,7 +54,7 @@ type Route struct {
 	ILinkIndex       int
 	Scope            Scope
 	Dst              *net.IPNet
-	Src              net.IP
+	Src              *net.IPNet
 	Gw               net.IP
 	MultiPath        []*NexthopInfo
 	Protocol         RouteProtocol
@@ -123,7 +123,7 @@ func (r Route) Equal(x Route) bool {
 		r.ILinkIndex == x.ILinkIndex &&
 		r.Scope == x.Scope &&
 		ipNetEqual(r.Dst, x.Dst) &&
-		r.Src.Equal(x.Src) &&
+		ipNetEqual(r.Src, x.Src) &&
 		r.Gw.Equal(x.Gw) &&
 		nexthopInfoSlice(r.MultiPath).Equal(x.MultiPath) &&
 		r.Protocol == x.Protocol &&
