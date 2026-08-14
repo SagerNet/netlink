@@ -498,6 +498,7 @@ func (req *NetlinkRequest) Execute(sockType int, resType uint16) ([][]byte, erro
 		if err != nil {
 			return nil, err
 		}
+		defer s.Close()
 
 		if err := s.SetSendTimeout(&SocketTimeoutTv); err != nil {
 			return nil, err
@@ -510,8 +511,6 @@ func (req *NetlinkRequest) Execute(sockType int, resType uint16) ([][]byte, erro
 				return nil, err
 			}
 		}
-
-		defer s.Close()
 	} else {
 		s.Lock()
 		defer s.Unlock()
@@ -621,18 +620,19 @@ func getNetlinkSocket(protocol int) (*NetlinkSocket, error) {
 	}
 	err = unix.SetNonblock(fd, true)
 	if err != nil {
-		return nil, err
-	}
-	s := &NetlinkSocket{
-		fd:   int32(fd),
-		file: os.NewFile(uintptr(fd), "netlink"),
-	}
-	s.lsa.Family = unix.AF_NETLINK
-	if err := unix.Bind(fd, &s.lsa); err != nil {
 		unix.Close(fd)
 		return nil, err
 	}
-
+	s := &NetlinkSocket{
+		fd: int32(fd),
+	}
+	s.lsa.Family = unix.AF_NETLINK
+	err = unix.Bind(fd, &s.lsa)
+	if err != nil {
+		unix.Close(fd)
+		return nil, err
+	}
+	s.file = os.NewFile(uintptr(fd), "netlink")
 	return s, nil
 }
 
@@ -714,11 +714,11 @@ func Subscribe(protocol int, groups ...uint) (*NetlinkSocket, error) {
 	}
 	err = unix.SetNonblock(fd, true)
 	if err != nil {
+		unix.Close(fd)
 		return nil, err
 	}
 	s := &NetlinkSocket{
-		fd:   int32(fd),
-		file: os.NewFile(uintptr(fd), "netlink"),
+		fd: int32(fd),
 	}
 	s.lsa.Family = unix.AF_NETLINK
 
@@ -726,11 +726,12 @@ func Subscribe(protocol int, groups ...uint) (*NetlinkSocket, error) {
 		s.lsa.Groups |= (1 << (g - 1))
 	}
 
-	if err := unix.Bind(fd, &s.lsa); err != nil {
+	err = unix.Bind(fd, &s.lsa)
+	if err != nil {
 		unix.Close(fd)
 		return nil, err
 	}
-
+	s.file = os.NewFile(uintptr(fd), "netlink")
 	return s, nil
 }
 
