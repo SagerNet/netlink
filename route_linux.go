@@ -783,7 +783,7 @@ func (h *Handle) routeHandle(route *Route, req *nl.NetlinkRequest, msg *nl.RtMsg
 		} else {
 			srcData = route.Src.IP.To16()
 		}
-		srcLen, _ := route.Dst.Mask.Size()
+		srcLen, _ := route.Src.Mask.Size()
 		msg.Src_len = uint8(srcLen)
 		// The commonly used src ip for routes is actually PREFSRC
 		rtAttrs = append(rtAttrs, nl.NewRtAttr(unix.RTA_PREFSRC, srcData))
