@@ -112,7 +112,7 @@ func ruleHandle(rule *Rule, req *nl.NetlinkRequest) error {
 		native.PutUint32(b, rule.Mark)
 		req.AddData(nl.NewRtAttr(nl.FRA_FWMARK, b))
 	}
-	if rule.Mask >= 0 {
+	if rule.Mask != -1 {
 		b := make([]byte, 4)
 		native.PutUint32(b, uint32(rule.Mask))
 		req.AddData(nl.NewRtAttr(nl.FRA_FWMASK, b))
